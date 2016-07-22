@@ -33,6 +33,10 @@ var groupName,
   location,
   containerPrefix = 'xplatContainer',
   containerPrefix2 = 'xplatContainer2',
+  containerPrefix3 = 'xplatContainer3',
+  containerPrefix4 = 'xplatContainer4',
+  dnsPrefix3 = containerPrefix3 + 'dns',
+  dnsPrefix4 = containerPrefix4 + 'dns',
   username = 'azureuser',
   password = 'Brillio@2015',
   keydata = 'test',
@@ -59,6 +63,8 @@ describe('arm', function() {
         groupName = suite.generateId(groupPrefix, null);
         containerPrefix = suite.generateId(containerPrefix, null);
         containerPrefix2 = suite.generateId(containerPrefix2, null);
+        containerPrefix3 = suite.generateId(containerPrefix3, null);
+        containerPrefix4 = suite.generateId(containerPrefix4, null);
         done();
       });
     });
@@ -187,7 +193,20 @@ describe('arm', function() {
           });
         });
       });
-
+      
+      it('container quick-create should pass', function (done) {
+        this.timeout(vmTest.timeoutLarge * 10);
+        var cmd = util.format('acs quick-create -g %s -n %s -l %s --orchestrator DCOS --master-count 1 --agent-count 1 --username %s --os-Type linux --ssh-publickey-file %s --dns-prefix %s --json', groupName, containerPrefix3, location, username, sshcert, dnsPrefix3).split(' ');
+        testUtils.executeCommand(suite, retry, cmd, function (result) {
+          result.exitStatus.should.equal(0);
+          var cmd = util.format('acs quick-create -g %s -n %s -l %s --orchestrator Swarm --master-count 1 --agent-count 1 --username %s --os-Type linux --ssh-publickey-file %s --dns-prefix %s --json', groupName, containerPrefix4, location, username, sshcert, dnsPrefix4).split(' ');
+          testUtils.executeCommand(suite, retry, cmd, function (result) {
+            result.exitStatus.should.equal(0);
+            done();
+          });
+        });
+      });
+       
       it('container non-empty list should pass', function(done) {
         this.timeout(vmTest.timeoutLarge * 10);
         var cmd = util.format('acs list -g %s --json', groupName).split(' ');
@@ -248,7 +267,15 @@ describe('arm', function() {
           var cmd = util.format('acs delete -g %s --name %s --json', groupName, containerPrefix2).split(' ');
           testUtils.executeCommand(suite, retry, cmd, function(result) {
             result.exitStatus.should.equal(0);
-            done();
+            var cmd = util.format('acs delete -g %s --name %s --json', groupName, containerPrefix3).split(' ');
+            testUtils.executeCommand(suite, retry, cmd, function(result) {
+              result.exitStatus.should.equal(0);
+              var cmd = util.format('acs delete -g %s --name %s --json', groupName, containerPrefix4).split(' ');
+              testUtils.executeCommand(suite, retry, cmd, function(result) {
+                result.exitStatus.should.equal(0);
+                done();
+              });
+            });  
           });
         });
       });
